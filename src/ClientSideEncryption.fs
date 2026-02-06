@@ -25,7 +25,7 @@ module ClientSideEncryption =
         open Amazon.S3
         open Amazon.S3.Model
         open Microsoft.Extensions.Logging
-        open Alma.ErrorHandling
+        open Feather.ErrorHandling
         open Alma.Tracing
         open Alma.AWS.S3Bucket
 

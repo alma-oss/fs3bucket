@@ -3,7 +3,7 @@ namespace Alma.AWS.S3Bucket
 // This file itself should be in a separate library, for Alma.AWS, but it is currently not needed anywhere else, so for now, it is just here.
 
 open System
-open Alma.ErrorHandling
+open Feather.ErrorHandling
 open Alma.ServiceIdentification
 open Alma.Tracing
 
