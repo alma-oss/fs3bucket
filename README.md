@@ -1,26 +1,17 @@
 F-S3Bucket
 ==========
 
+[![NuGet](https://img.shields.io/nuget/v/Alma.S3Bucket.svg)](https://www.nuget.org/packages/Alma.S3Bucket)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Alma.S3Bucket.svg)](https://www.nuget.org/packages/Alma.S3Bucket)
+[![Tests](https://github.com/alma-oss/fs3bucket/actions/workflows/tests.yaml/badge.svg)](https://github.com/alma-oss/fs3bucket/actions/workflows/tests.yaml)
+
 Library for accessing a AWS S3 Bucket storage.
 
 ## Install
 
-Add following into `paket.dependencies`
-```
-source https://nuget.pkg.github.com/almacareer/index.json username: "%PRIVATE_FEED_USER%" password: "%PRIVATE_FEED_PASS%"
-# LMC Nuget dependencies:
-nuget Alma.S3Bucket
-```
-
-NOTE: For local development, you have to create ENV variables with your github personal access token.
-```sh
-export PRIVATE_FEED_USER='{GITHUB USERNANME}'
-export PRIVATE_FEED_PASS='{TOKEN}'	# with permissions: read:packages
-```
-
 Add following into `paket.references`
 ```
-Alma.AWS.S3Bucket
+Alma.S3Bucket
 ```
 
 ## Use
@@ -55,7 +46,7 @@ TIP: use `S3Bucket.Configuration.forXXX` function for easier configuration creat
 ### Put item to S3Bucket
 ```fs
 open Alma.AWS.S3Bucket
-open Alma.ErrorHandling
+open Feather.ErrorHandling
 
 asyncResult {
     do! S3Bucket.put s3client {
@@ -79,7 +70,7 @@ asyncResult {
 ### Use client-side encryption
 
 ```fs
-open Alma.ErrorHandling
+open Feather.ErrorHandling
 open Alma.AWS.S3Bucket
 open Alma.AWS.S3Bucket.ClientSideEncryption
 
@@ -97,9 +88,11 @@ asyncResult {
 }
 ```
 
-NOTE: 
+NOTE:
 There is a `EncryptionKey.createAES256()` function, which can be used to create a valid `EncryptionKey`, but keep in mind, that you need the key, for getting the item back.
 So you should persist the key to your secrets store.
+
+---
 
 ## Release
 1. Increment version in `S3Bucket.fsproj`

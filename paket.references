@@ -2,6 +2,6 @@ FSharp.Core
 AWSSDK.Core
 AWSSDK.S3
 AWSSDK.SecurityToken
-Alma.ErrorHandling
+Feather.ErrorHandling
 Alma.ServiceIdentification
 Alma.Tracing
