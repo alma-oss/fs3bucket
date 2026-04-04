@@ -29,7 +29,7 @@ module ClientSideEncryption =
         open Alma.Tracing
         open Alma.AWS.S3Bucket
 
-        let put { Client = client; Bucket = bucket } (EncryptionKey encryptionKey) file = asyncResult {
+        let put { Client = client; Bucket = bucket } (EncryptionKey encryptionKey) (file: BucketContent) = asyncResult {
             use trace = S3Bucket.trace "Put Encrypted Item" bucket
             let traceError = S3Bucket.traceError trace
 

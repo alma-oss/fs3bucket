@@ -3,6 +3,7 @@ storage: none
 
 source https://api.nuget.org/v3/index.json
 nuget FSharp.Core ~> 10.0
+nuget FSharp.Control.AsyncSeq ~> 4.0
 nuget AWSSDK.Core ~> 4.0
 nuget AWSSDK.S3 ~> 4.0
 nuget AWSSDK.SecurityToken ~> 4.0

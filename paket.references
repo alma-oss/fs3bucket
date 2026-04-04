@@ -1,4 +1,5 @@
 FSharp.Core
+FSharp.Control.AsyncSeq
 AWSSDK.Core
 AWSSDK.S3
 AWSSDK.SecurityToken

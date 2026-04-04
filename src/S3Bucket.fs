@@ -6,6 +6,7 @@ open System
 open Feather.ErrorHandling
 open Alma.ServiceIdentification
 open Alma.Tracing
+open FSharp.Control
 
 //
 // Errors
@@ -19,6 +20,13 @@ type BucketPutError =
 
 type BucketGetError =
     | BucketGetExn of exn
+
+type BucketStreamPutError =
+    | BucketStreamPutExn of exn
+    | BucketStreamAbortExn of exn
+
+type BucketGetStreamError =
+    | BucketGetStreamExn of exn
 
 //
 // Types
@@ -74,6 +82,11 @@ type BucketContent = {
     Content: string
 }
 
+type BucketStreamedContent = {
+    Name: string
+    Content: AsyncSeq<byte[]>
+}
+
 [<RequireQualifiedAccess>]
 module S3Bucket =
     open System
@@ -114,6 +127,115 @@ module S3Bucket =
         |> Trace.addError (TracedError.ofError (sprintf "%A") error)
         |> ignore
 
+    [<RequireQualifiedAccess>]
+    module internal Multipart =
+        // AWS S3 (and MinIO) require each part except the last to be at least 5 MB.
+        // https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
+        [<Literal>]
+        let MinPartSize = 5 * 1024 * 1024
+
+        type ETag = private ETag of string
+
+        type Upload = {
+            BucketName: BucketName
+            Key: string
+            UploadId: string
+        }
+
+        let create (AWSClient client) bucket key = asyncResult {
+            let bucketName = bucket |> BucketName.value
+            let request = new InitiateMultipartUploadRequest(BucketName = bucketName, Key = key)
+            let! (response: InitiateMultipartUploadResponse) =
+                client.InitiateMultipartUploadAsync(request)
+                |> AsyncResult.ofTaskCatch BucketStreamPutExn
+
+            return {
+                BucketName = bucket
+                Key = key
+                UploadId = response.UploadId
+            }
+        }
+
+        let uploadPart (AWSClient client) (upload: Upload) partNumber (data: byte[]) = asyncResult {
+            use stream = new MemoryStream(data)
+            let request =
+                new UploadPartRequest(
+                    BucketName = (upload.BucketName |> BucketName.value),
+                    Key = upload.Key,
+                    UploadId = upload.UploadId,
+                    PartNumber = Nullable(partNumber),
+                    InputStream = stream
+                )
+
+            let! (response: UploadPartResponse) =
+                client.UploadPartAsync(request)
+                |> AsyncResult.ofTaskCatch BucketStreamPutExn
+
+            return partNumber, ETag response.ETag
+        }
+
+        let complete (AWSClient client) (upload: Upload) (parts: (int * ETag) list) = asyncResult {
+            let partETags =
+                parts
+                |> List.map (fun (pn, ETag etag) ->
+                    new PartETag(PartNumber = Nullable(pn), ETag = etag)
+                )
+
+            let request =
+                new CompleteMultipartUploadRequest(
+                    BucketName = (upload.BucketName |> BucketName.value),
+                    Key = upload.Key,
+                    UploadId = upload.UploadId,
+                    PartETags = ResizeArray(partETags)
+                )
+
+            let! _response =
+                client.CompleteMultipartUploadAsync(request)
+                |> AsyncResult.ofTaskCatch BucketStreamPutExn
+
+            return ()
+        }
+
+        let abort (AWSClient client) (upload: Upload) = asyncResult {
+            let request =
+                new AbortMultipartUploadRequest(
+                    BucketName = (upload.BucketName |> BucketName.value),
+                    Key = upload.Key,
+                    UploadId = upload.UploadId
+                )
+
+            let! _response =
+                client.AbortMultipartUploadAsync(request)
+                |> AsyncResult.ofTaskCatch BucketStreamAbortExn
+
+            return ()
+        }
+
+        let readInChunks chunkSize (stream: Stream) = asyncSeq {
+            let buffer = Array.zeroCreate<byte> chunkSize
+            let rec loop () = asyncSeq {
+                let! n = stream.ReadAsync(buffer, 0, chunkSize) |> Async.AwaitTask
+                if n > 0 then
+                    yield Array.sub buffer 0 n
+                    yield! loop ()
+            }
+
+            yield! loop ()
+        }
+
+        // Accumulates small chunks into buffers of at least minSize bytes, yielding
+        // each full buffer as a single byte[]. The final buffer may be smaller.
+        let bufferToMinSize minSize (source: AsyncSeq<byte[]>) : AsyncSeq<byte[]> = asyncSeq {
+            use buffer = new MemoryStream()
+            for chunk in source do
+                buffer.Write(chunk, 0, chunk.Length)
+                if buffer.Length >= int64 minSize then
+                    yield buffer.ToArray()
+                    buffer.SetLength(0L)
+            if buffer.Length > 0L then
+                yield buffer.ToArray()
+        }
+
     let connect (configuration: Configuration) = asyncResult {
         use trace = trace "Connect" configuration.Bucket
         let defaultRegion = Amazon.RegionEndpoint.EUWest1
@@ -143,7 +265,7 @@ module S3Bucket =
         return ()
     }
 
-    let put { Client = client; Bucket = bucket } file = asyncResult {
+    let put { Client = client; Bucket = bucket } (file: BucketContent) = asyncResult {
         use trace = trace "Put Item" bucket
         let traceError = traceError trace
 
@@ -158,6 +280,50 @@ module S3Bucket =
         return!
             request
             |> putRequest client
+            |> AsyncResult.teeError traceError
+    }
+
+    let putStream (logger: ILogger) { Client = client; Bucket = bucket } (file: BucketStreamedContent) = asyncResult {
+        use trace = trace "Put Stream" bucket
+        let traceError = traceError trace
+
+        let! upload =
+            file.Name
+            |> Multipart.create client bucket
+            |> AsyncResult.teeError traceError
+
+        let uploadParts (): AsyncResult<_, BucketStreamPutError> =
+            file.Content
+            |> Multipart.bufferToMinSize Multipart.MinPartSize
+            |> AsyncSeq.indexed
+            |> AsyncSeq.foldAsync (fun state (i, data) -> async {
+                match state with
+                | Error _ -> return state
+                | Ok parts ->
+                    let partNumber = int i + 1
+                    let! uploadResult =
+                        data
+                        |> Multipart.uploadPart client upload partNumber
+                        |> AsyncResult.retryWith (logger.LogWarning) 500 3
+
+                    return
+                        match uploadResult with
+                        | Ok part -> Ok (part :: parts)
+                        | Error e -> Error e
+            }) (Ok [])
+
+        let! uploadedParts = async {
+            match! uploadParts () with
+            | Ok parts -> return Ok (parts |> List.rev) // reverse to get correct part order
+            | Error uploadErr ->
+                match! Multipart.abort client upload with
+                | Ok () -> return Error uploadErr
+                | Error abortErr -> return Error abortErr
+        }
+
+        return!
+            uploadedParts
+            |> Multipart.complete client upload
             |> AsyncResult.teeError traceError
     }
 
@@ -184,4 +350,24 @@ module S3Bucket =
             request
             |> getRequest client
             |> AsyncResult.teeError traceError
+    }
+
+    let getStream chunkSize { Client = (AWSClient client); Bucket = bucket } name = asyncResult {
+        use trace =
+            trace "Get Stream" bucket
+            |> Trace.addTags [ "db.statement", sprintf "Key = %s" name ]
+        let traceError = traceError trace
+
+        let bucketName = bucket |> BucketName.value
+        let request = new GetObjectRequest(BucketName = bucketName, Key = name)
+
+        let! (response: GetObjectResponse) =
+            client.GetObjectAsync(request)
+            |> AsyncResult.ofTaskCatch BucketGetStreamExn
+            |> AsyncResult.teeError traceError
+
+        return asyncSeq {
+            use r = response
+            yield! r.ResponseStream |> Multipart.readInChunks chunkSize
+        }
     }
