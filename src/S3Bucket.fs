@@ -28,6 +28,9 @@ type BucketStreamPutError =
 type BucketGetStreamError =
     | BucketGetStreamExn of exn
 
+type BucketDeleteError =
+    | BucketDeleteExn of exn
+
 //
 // Types
 //
@@ -370,4 +373,21 @@ module S3Bucket =
             use r = response
             yield! r.ResponseStream |> Multipart.readInChunks chunkSize
         }
+    }
+
+    let delete { Client = AWSClient client; Bucket = bucket } name = asyncResult {
+        use trace =
+            trace "Delete Item" bucket
+            |> Trace.addTags [ "db.statement", sprintf "Key = %s" name ]
+        let traceError = traceError trace
+
+        let bucketName = bucket |> BucketName.value
+        let request = new DeleteObjectRequest(BucketName = bucketName, Key = name)
+
+        let! _response =
+            client.DeleteObjectAsync(request)
+            |> AsyncResult.ofTaskCatch BucketDeleteExn
+            |> AsyncResult.teeError traceError
+
+        return ()
     }
