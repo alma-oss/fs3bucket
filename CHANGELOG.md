@@ -2,6 +2,7 @@
 
 <!-- There is always Unreleased section on the top. Subsections (Add, Changed, Fix, Removed) should be Add as needed. -->
 ## Unreleased
+- Add `ServiceUrl` option to `Configuration` for custom S3-compatible endpoints (e.g. MinIO)
 
 ## 2.2.0 - 2026-04-04
 - Add `S3Bucket` function
