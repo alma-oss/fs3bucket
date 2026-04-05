@@ -52,6 +52,7 @@ module BucketName =
 
 type Configuration = {
     Region: Amazon.RegionEndpoint option
+    ServiceUrl: string option
     Credentials: Credentials
     Bucket: BucketName
 }
@@ -103,6 +104,7 @@ module S3Bucket =
         let forServiceAccount bucket =
             {
                 Region = None
+                ServiceUrl = None
                 Credentials = ServiceAccount
                 Bucket = bucket
             }
@@ -110,6 +112,7 @@ module S3Bucket =
         let forAccessKey bucket accessKey =
             {
                 Region = None
+                ServiceUrl = None
                 Credentials = AccessKey accessKey
                 Bucket = bucket
             }
@@ -245,10 +248,17 @@ module S3Bucket =
         let region = configuration.Region |> Option.defaultValue defaultRegion
 
         try
+            let clientConfig =
+                let cfg = new AmazonS3Config(RegionEndpoint = region)
+                configuration.ServiceUrl |> Option.iter (fun url ->
+                    cfg.ServiceURL <- url
+                    cfg.ForcePathStyle <- true)
+                cfg
+
             let client: AmazonS3Client =
                 match configuration.Credentials with
-                | ServiceAccount -> new AmazonS3Client(region)
-                | AccessKey { Key = key; Secret = secret } -> new AmazonS3Client(key, secret, region)
+                | ServiceAccount -> new AmazonS3Client(clientConfig)
+                | AccessKey { Key = key; Secret = secret } -> new AmazonS3Client(key, secret, clientConfig)
 
             return {
                 Client = AWSClient client
