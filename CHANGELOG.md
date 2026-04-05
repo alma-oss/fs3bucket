@@ -2,6 +2,8 @@
 
 <!-- There is always Unreleased section on the top. Subsections (Add, Changed, Fix, Removed) should be Add as needed. -->
 ## Unreleased
+
+## 2.3.0 - 2026-04-05
 - Add `ServiceUrl` option to `Configuration` for custom S3-compatible endpoints (e.g. MinIO)
 
 ## 2.2.0 - 2026-04-04
