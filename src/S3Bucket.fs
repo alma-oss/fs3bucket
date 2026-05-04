@@ -44,11 +44,22 @@ type Credentials =
     | ServiceAccount
     | AccessKey of AWSAccessKey
 
-type BucketName = BucketName of Instance
+type BucketName =
+    | [<Obsolete("Use Instance instead; BucketName will be removed next major version")>] BucketName of Instance
+    | Instance of Instance
+    | InstanceWithSidecar of Instance * SidecarSuffix
+
+and SidecarSuffix = SidecarSuffix of string
 
 [<RequireQualifiedAccess>]
 module BucketName =
-    let value (BucketName bucket) = bucket |> Instance.concat "-" |> fun s -> s.ToLowerInvariant()
+    let private normalize (s: string) =
+        s.ToLowerInvariant()
+
+    let value = function
+        | BucketName instance
+        | Instance instance -> instance |> Instance.concat "-" |> normalize
+        | InstanceWithSidecar (instance, SidecarSuffix sideCarSuffix) -> sprintf "%s--%s" (instance |> Instance.concat "-") sideCarSuffix |> normalize
 
 type Configuration = {
     Region: Amazon.RegionEndpoint option
@@ -150,7 +161,7 @@ module S3Bucket =
 
         let create (AWSClient client) bucket key = asyncResult {
             let bucketName = bucket |> BucketName.value
-            let request = new InitiateMultipartUploadRequest(BucketName = bucketName, Key = key)
+            let request = InitiateMultipartUploadRequest(BucketName = bucketName, Key = key)
             let! (response: InitiateMultipartUploadResponse) =
                 client.InitiateMultipartUploadAsync(request)
                 |> AsyncResult.ofTaskCatch BucketStreamPutExn
@@ -184,11 +195,11 @@ module S3Bucket =
             let partETags =
                 parts
                 |> List.map (fun (pn, ETag etag) ->
-                    new PartETag(PartNumber = Nullable(pn), ETag = etag)
+                    PartETag(PartNumber = Nullable(pn), ETag = etag)
                 )
 
             let request =
-                new CompleteMultipartUploadRequest(
+                CompleteMultipartUploadRequest(
                     BucketName = (upload.BucketName |> BucketName.value),
                     Key = upload.Key,
                     UploadId = upload.UploadId,
@@ -204,7 +215,7 @@ module S3Bucket =
 
         let abort (AWSClient client) (upload: Upload) = asyncResult {
             let request =
-                new AbortMultipartUploadRequest(
+                AbortMultipartUploadRequest(
                     BucketName = (upload.BucketName |> BucketName.value),
                     Key = upload.Key,
                     UploadId = upload.UploadId
