@@ -1,5 +1,9 @@
 # AGENTS.md — Alma.S3Bucket (fs3bucket)
 
+## Agent Skills
+
+This repo ships Agent Skill for the library `Alma.S3Bucket`. Compatible agents discover them automatically; see `.agents/skills/fs3bucket/SKILL.md`.
+
 ## Project Purpose
 
 F# library (`Alma.S3Bucket`) for accessing AWS S3 Bucket storage. Provides a typed, traced API for connecting to S3 buckets, putting/getting objects as string content, and optional client-side AES-256 encryption. Published as a NuGet package.
