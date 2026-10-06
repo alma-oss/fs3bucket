@@ -1,0 +1,113 @@
+lockfile_version: '1'
+dependencies: []
+deployments:
+- kind: project-relative
+  target: claude
+  value: .claude/skills/fs3bucket
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/fs3bucket/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a3b00f5e12eadcaec85c0a0e556dd6fa351c4a7c3846246fa63288022793a11d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/fs3bucket/references/anti-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:776cde1b4662fd17fb9654ae047349bc8e5a624969f17a00c64ccf38061ad8b7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/fs3bucket/references/examples.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:4524aefb87da0aeb70ebcbcf1cb6eefc2dc330e0b72224d4fefcaa458022ec98
+- kind: project-relative
+  target: claude
+  value: .claude/skills/fs3bucket/references/preferred-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:bfcf611ce041f792cde960c8d92c3066ad0027e5b1ee0279e025a2143856e8a0
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/fs3bucket
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/fs3bucket/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a3b00f5e12eadcaec85c0a0e556dd6fa351c4a7c3846246fa63288022793a11d
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/fs3bucket/references/anti-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:776cde1b4662fd17fb9654ae047349bc8e5a624969f17a00c64ccf38061ad8b7
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/fs3bucket/references/examples.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:4524aefb87da0aeb70ebcbcf1cb6eefc2dc330e0b72224d4fefcaa458022ec98
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/fs3bucket/references/preferred-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:bfcf611ce041f792cde960c8d92c3066ad0027e5b1ee0279e025a2143856e8a0
+local_deployed_files:
+- .agents/skills/fs3bucket
+- .agents/skills/fs3bucket/SKILL.md
+- .agents/skills/fs3bucket/references/anti-patterns.md
+- .agents/skills/fs3bucket/references/examples.md
+- .agents/skills/fs3bucket/references/preferred-patterns.md
+- .claude/skills/fs3bucket
+- .claude/skills/fs3bucket/SKILL.md
+- .claude/skills/fs3bucket/references/anti-patterns.md
+- .claude/skills/fs3bucket/references/examples.md
+- .claude/skills/fs3bucket/references/preferred-patterns.md
+local_deployed_file_hashes:
+  .agents/skills/fs3bucket/SKILL.md: sha256:a3b00f5e12eadcaec85c0a0e556dd6fa351c4a7c3846246fa63288022793a11d
+  .agents/skills/fs3bucket/references/anti-patterns.md: sha256:776cde1b4662fd17fb9654ae047349bc8e5a624969f17a00c64ccf38061ad8b7
+  .agents/skills/fs3bucket/references/examples.md: sha256:4524aefb87da0aeb70ebcbcf1cb6eefc2dc330e0b72224d4fefcaa458022ec98
+  .agents/skills/fs3bucket/references/preferred-patterns.md: sha256:bfcf611ce041f792cde960c8d92c3066ad0027e5b1ee0279e025a2143856e8a0
+  .claude/skills/fs3bucket/SKILL.md: sha256:a3b00f5e12eadcaec85c0a0e556dd6fa351c4a7c3846246fa63288022793a11d
+  .claude/skills/fs3bucket/references/anti-patterns.md: sha256:776cde1b4662fd17fb9654ae047349bc8e5a624969f17a00c64ccf38061ad8b7
+  .claude/skills/fs3bucket/references/examples.md: sha256:4524aefb87da0aeb70ebcbcf1cb6eefc2dc330e0b72224d4fefcaa458022ec98
+  .claude/skills/fs3bucket/references/preferred-patterns.md: sha256:bfcf611ce041f792cde960c8d92c3066ad0027e5b1ee0279e025a2143856e8a0
